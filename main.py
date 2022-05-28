@@ -1,3 +1,4 @@
+import webbrowser
 import speech_recognition as s_r # распознавание речи в текст
 from vosk import Model, KaldiRecognizer as Kaldi # оффлайн-распознавание
 import pyttsx3 # синтез речи
@@ -109,6 +110,63 @@ def offline_recognition():
     return recognized_data
 
 
+# команды ассистенту
+
+def search_on_youtube(*args: tuple):
+
+    # поиск видео на ютубе
+
+    if not args[0]:
+        return
+    print(args[0])
+    search_query = ' '.join(args[0])
+    url = 'https://www.youtube.com/results?search_query=' + search_query
+    webbrowser.get().open(url)
+
+    # для мультиязычности лучше создать отдельный класс для перевода из JSON-файла
+    return 'Вот что я нашла по запросу' + search_query + 'на youtube'
+
+
+def search_standart_on_cntd(*args: tuple):
+
+    # поиск стандартов в электронном фонде docs.cntd.ru
+    if not args[0]:
+        return
+    search_query = ' '.join(args[0])
+    url = 'https://docs.cntd.ru/search?q=' + search_query
+    webbrowser.get().open(url)
+
+    return 'Вот что нашлось по запросу' + voice_input[0] + search_query
+
+
+commands = {
+    #("hello", "hi", "morning", "привет"): play_greetings,
+    #("bye", "goodbye", "quit", "exit", "stop", "пока"): play_farewell_and_quit,
+    #("search", "google", "find", "найди"): search_for_term_on_google,
+    ('video', 'youtube', 'watch', 'видео', 'ютуб'): search_on_youtube,
+    ('гост', 'стандарт', 'снип', 'ту'): search_standart_on_cntd,
+    #("wikipedia", "definition", "about", "определение", "википедия"): search_on_wikipedia,
+    #("translate", "interpretation", "translation", "перевод", "перевести", "переведи"): get_translation,
+    #("language", "язык"): change_language,
+    #("weather", "forecast", "погода", "прогноз"): get_weather_forecast,
+}
+
+
+def execute_named_commands(command_name: str, *args: list):
+
+    # Выполнение заданной пользователем команды с дополнительными аргументами
+
+    for key in commands.keys():
+        if command_name in key:
+            play_vox_assistant_speech(commands[key](*args))
+        else:
+            #play_vox_assistant_speech('Я такого пока не умею')
+            print('команда не найдена')
+
+
+# задел
+
+
 if __name__ == '__main__':
 
     # инициализация распознавания и ввода речи
@@ -129,19 +187,15 @@ if __name__ == '__main__':
     while True:
 
         # старт записи речи с последующим выводом распознанной речи
+        # и удалением записанного в микрофон аудио
         voice_input = record_and_recognize()
         os.remove('microphone-results.wav')
         print(voice_input)
 
-        # выделение команд от прочей информации
+        # выделение команд от аргументов
+        # первое слово - основная команда, остальные слова аргументы для поисковой фразы
         voice_input = voice_input.split(' ')
         command = voice_input[0]
 
-        if command == 'привет':
-            play_vox_assistant_speech('Приветствую!')
-
-        if command == 'ты':
-            play_vox_assistant_speech('Я голосовой помощник Nora')
-
-        if command == 'навыки':
-            play_vox_assistant_speech('пока рано об этом говорить')
+        command_args = [str(ask_part) for ask_part in voice_input[1:len(voice_input)]]
+        execute_named_commands(command, command_args)
