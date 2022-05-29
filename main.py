@@ -1,8 +1,7 @@
-import webbrowser
 import speech_recognition as s_r # распознавание речи в текст
 from vosk import Model, KaldiRecognizer as Kaldi # оффлайн-распознавание
 import pyttsx3 # синтез речи
-import wave, json, os # работа с wav, json, файловой системой
+import wave, json, os, webbrowser # работа с wav, json, файловой системой, браузером
 
 class Vox:
 
@@ -11,6 +10,28 @@ class Vox:
     sex = ''
     speech_lang = ''
     recognition_lang = ''
+
+
+class Translation:
+
+    # интегрированный перевод строк ru, en
+
+    with open('translations.json', 'r', encoding='UTF-8') as file:
+        translations = json.load(file)
+
+
+    def get_translation(self, text: str):
+        """
+        получение перевода строки из файла на нужный язык
+        : param text: текст на перевод
+        : return: интегрированный перевод
+        """ 
+        if text in self.translations:
+            return self.translations[text][assistant.speech_lang]
+        else:
+            # если нет готового перевода, выводим сообщение об этом
+            print(f'Нет переведенной фразы: {text}')
+            return text
 
 
 def setup_vox_voice():
@@ -49,7 +70,7 @@ def record_and_recognize(*args: tuple):
         recognized_data = ''
 
         # регулирование уровня шума
-        recognizer.adjust_for_ambient_noise(microphone, duration=2)
+        recognizer.adjust_for_ambient_noise(microphone, duration=3)
 
         try:
             print('Слушаю...')
@@ -118,13 +139,14 @@ def search_on_youtube(*args: tuple):
 
     if not args[0]:
         return
-    print(args[0])
     search_query = ' '.join(args[0])
     url = 'https://www.youtube.com/results?search_query=' + search_query
     webbrowser.get().open(url)
 
     # для мультиязычности лучше создать отдельный класс для перевода из JSON-файла
-    return 'Вот что я нашла по запросу' + search_query + 'на youtube'
+    play_vox_assistant_speech(translator.get_translation(
+        f'Вот что есть по запросу {search_query} на ютубе'
+        ))
 
 
 def search_standart_on_cntd(*args: tuple):
@@ -136,7 +158,21 @@ def search_standart_on_cntd(*args: tuple):
     url = 'https://docs.cntd.ru/search?q=' + search_query
     webbrowser.get().open(url)
 
-    return 'Вот что нашлось по запросу' + voice_input[0] + search_query
+    play_vox_assistant_speech(translator.get_translation(
+        f'Вот что нашлось по запросу {voice_input[1]} {search_query}'
+        ))
+
+
+def repeater(*args: tuple):
+    
+    # повторение услышанного
+    if not args[0]:
+        return
+    print(args)
+    text = ' '.join(args[0])
+    play_vox_assistant_speech(
+        f'повторяю, вы сказали: {text}'
+    )
 
 
 commands = {
@@ -144,8 +180,9 @@ commands = {
     #("bye", "goodbye", "quit", "exit", "stop", "пока"): play_farewell_and_quit,
     #("search", "google", "find", "найди"): search_for_term_on_google,
     ('video', 'youtube', 'watch', 'видео', 'ютуб'): search_on_youtube,
-    ('гост', 'стандарт', 'снип', 'ту'): search_standart_on_cntd,
-    #("wikipedia", "definition", "about", "определение", "википедия"): search_on_wikipedia,
+    ('гост', 'стандарт', 'снип', 'iso', 'gost',): search_standart_on_cntd,
+    ('повтори', 'repeat', 'повтори-ка'): repeater,
+    #("wikipedia", "definition", "about", "определение", "википедия"): search_on_wikipedia, # 'https://ru.wikipedia.org/w/index.php?search='
     #("translate", "interpretation", "translation", "перевод", "перевести", "переведи"): get_translation,
     #("language", "язык"): change_language,
     #("weather", "forecast", "погода", "прогноз"): get_weather_forecast,
@@ -158,7 +195,7 @@ def execute_named_commands(command_name: str, *args: list):
 
     for key in commands.keys():
         if command_name in key:
-            play_vox_assistant_speech(commands[key](*args))
+            commands[key](*args)
         else:
             #play_vox_assistant_speech('Я такого пока не умею')
             print('команда не найдена')
@@ -178,9 +215,12 @@ if __name__ == '__main__':
 
     # настройка ассистента
     assistant = Vox()
-    assistant.name = 'Nora'
+    assistant.name = ('пятница')
     assistant.sex = 'female'
     assistant.speech_lang = 'ru'
+
+    # переводчик ru-en
+    translator = Translation()
 
     setup_vox_voice()
 
@@ -189,13 +229,24 @@ if __name__ == '__main__':
         # старт записи речи с последующим выводом распознанной речи
         # и удалением записанного в микрофон аудио
         voice_input = record_and_recognize()
-        os.remove('microphone-results.wav')
+        try:
+            os.remove('microphone-results.wav')
+        except FileNotFoundError:
+            pass
         print(voice_input)
 
         # выделение команд от аргументов
-        # первое слово - основная команда, остальные слова аргументы для поисковой фразы
+        # первое слово - команда активации, второе - команда, остальные слова аргументы для поисковой фразы        
         voice_input = voice_input.split(' ')
-        command = voice_input[0]
+        print(voice_input[0])
+        
+        if len(voice_input) > 1:
+            if voice_input[0] in assistant.name:
+                command = voice_input[1]
+                print(command)
 
-        command_args = [str(ask_part) for ask_part in voice_input[1:len(voice_input)]]
-        execute_named_commands(command, command_args)
+                command_args = [str(ask_part) for ask_part in voice_input[2:len(voice_input)]]
+                print(command_args)
+                execute_named_commands(command, command_args)
+        else:
+            play_vox_assistant_speech('я вас внимательно слушаю')
