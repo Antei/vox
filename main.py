@@ -215,10 +215,17 @@ def play_greetings(*args: tuple):
     """
     приветствие, случайное
     """
-    greetings = ['доброе утро', 'добрый день',
-                 'привет', 'здравствуйте', 'приветствую', 'добрый вечер']
+    greetings = ['добрый день', 'привет', 'здравствуйте',
+                 'приветствую', 'добрый вечер']
 
-    play_speech(f'{random.choice(greetings)}')
+    if current_hour < 11:
+        greetings = greetings[2:-1]
+        greetings.append('доброе утро')
+        play_speech(random.choice(greetings))
+    elif 11 < current_hour < 17:
+        play_speech(random.choice(greetings[:-1]))
+    elif current_hour > 17:
+        play_speech(random.choice(greetings[1:]))
 
 
 def failure_phrases(*args: tuple):
@@ -227,25 +234,24 @@ def failure_phrases(*args: tuple):
     """
     fail_phrases = ['слушаю', 'не поняла запрос', 'непонятно']
 
-    play_speech(f'{random.choice(fail_phrases)}')
+    play_speech(random.choice(fail_phrases))
 
 
 def play_farewell_and_quit(*args: tuple):
     """
-    прощание и выход из программы
+    случайное прощание и выход из программы
     """
     farewells = ['доброго дня', 'всего доброго', 'пока',
-                 'до встречи', 'хорошего вечера', 'доброй ночи']
+                 'до встречи', 'хорошего вечера']
 
-    current_hour = datetime.now().hour
     if current_hour < 17:
-        play_speech(f'{random.choice(farewells[:-2])}')
+        play_speech(random.choice(farewells[:-2]))
     elif current_hour > 17:
-        play_speech(f'{random.choice(farewells[1:-1])}')
+        play_speech(random.choice(farewells[1:-1]))
     elif current_hour > 22:
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
-        play_speech(f'{random.choice(farewells)}')
+        play_speech(random.choice(farewells))
     
     tts_engine.stop()
     quit()
@@ -382,6 +388,9 @@ if __name__ == '__main__':
 
     # переводчик ru-en
     translator = Translation()
+
+    # текущий час для корректного приветствия\прощания и прочего
+    current_hour = datetime.now().hour
 
     setup_vox_voice()
 
