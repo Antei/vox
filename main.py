@@ -1,7 +1,27 @@
 import speech_recognition as s_r # распознавание речи в текст
-from vosk import Model, KaldiRecognizer as Kaldi # оффлайн-распознавание
+from vosk import Model, KaldiRecognizer as Kaldi, SetLogLevel # оффлайн-распознавание
 import pyttsx3 # синтез речи
+
 import wave, json, os, webbrowser # работа с wav, json, файловой системой, браузером
+import random # использование случайных фраз из наборов и возможно не только
+import traceback # вывод traceback без остановки работы программы при отлове исключений
+from datetime import datetime # для ответов в соответствии с системным временем суток
+
+# немного машинного обучения
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+
+# окрашивание сообщений
+from termcolor import colored
+
+# выделим файлы с настройками отдельно
+
+
+# функции по отдельным категориям для удобства
+
+
+# классы
 
 class Vox:
 
@@ -12,13 +32,23 @@ class Vox:
     recognition_lang = ''
 
 
+class Owner:
+    """
+    информация о владельце, включая имя, город, родной язык, второй язык для перевода
+    """
+    
+    name = ''
+    city = ''
+    native_lang = ''
+    second_lang = ''
+
+
 class Translation:
 
     # интегрированный перевод строк ru, en
 
     with open('translations.json', 'r', encoding='UTF-8') as file:
         translations = json.load(file)
-
 
     def get_translation(self, text: str):
         """
@@ -40,7 +70,11 @@ def setup_vox_voice():
 
     voices = tts_engine.getProperty('voices')
 
-    if assistant.speech_lang == 'en':
+    if assistant.speech_lang == 'ru':
+        assistant.recognition_lang = 'ru-RU'
+        # MS Irina - Ru
+        tts_engine.setProperty('voice', voices[0].id)
+    else:
         assistant.recognition_lang = 'en-US'
         if assistant.sex == 'female':
             # MS Zira - Eng
@@ -48,16 +82,13 @@ def setup_vox_voice():
         else:
             # MS David - Eng
             tts_engine.setProperty('voices', voices[2].id)
-    else:
-        assistant.recognition_lang = 'ru-RU'
-        # MS Irina - Ru
-        tts_engine.setProperty('voice', voices[0].id)
 
 
-def play_vox_assistant_speech(text_to_speech):
+def play_speech(text_to_speech):
 
     # Воспроизведение ответов ассистента
 
+    print(colored(str(text_to_speech), 'green'))
     tts_engine.say(str(text_to_speech))
     tts_engine.runAndWait()
 
@@ -65,76 +96,76 @@ def play_vox_assistant_speech(text_to_speech):
 def record_and_recognize(*args: tuple):
 
     # Запись и распознавание аудио
-
     with microphone:
         recognized_data = ''
-
+        
         # регулирование уровня шума
         recognizer.adjust_for_ambient_noise(microphone, duration=2)
 
         try:
             print('Слушаю...')
-
             audio = recognizer.listen(microphone, 5, 5)
 
-            with open('microphone-results.wav', 'wb') as speech:
-                speech.write(audio.get_wav_data())
+            with open('microphone-results.wav', 'wb') as file:
+                file.write(audio.get_wav_data())
 
         except s_r.WaitTimeoutError:
             print('Проверьте, включен ли микрофон')
-            record_and_recognize()
+            traceback.print_exc()
+            return
 
-        # использование распознавания через гугл, требует наличия интернета
+        # использование распознавания офлайн, не требует наличия интернета
         try:
-            print('Обдумываю услышанное...')
-            recognized_data = recognizer.recognize_google(audio, language='ru').lower()
-
-        except s_r.UnknownValueError:
-            pass
-
-        # в случае проблем с доступом в интернет выдаем ошибку
-        except s_r.RequestError:
-            print('Пробую распознать без сети')
+            print('Обработка...')
             recognized_data = offline_recognition()
+            
+        except:
+            try:
+                recognized_data = recognizer.recognize_google(audio, language='ru').lower()
+            
+            except s_r.UnknownValueError:
+                    pass
+
+            # в случае не распознавания локально распознаем онлайн
+            except s_r.RequestError:
+                print('Пробую еще раз распознать офлайн')
+                recognized_data = offline_recognition()
 
         return recognized_data
 
 
 def offline_recognition():
 
-    # переключение на оффлайн-распознавание речи
-
     recognized_data = ''
+
+    SetLogLevel(-1) # отключаем спам лога в терминал
 
     try:
         # проверка наличия модели нужного языка
-        if not os.path.exists('models/vosk-model-small-ru-0.22'):
+        if not os.path.exists(f'models/vosk-model-small-{assistant.speech_lang}-0.22'):
             print('Пожалуйста загрузите модель языка отсюда:\n'
                   'https://alphacephei.com/vosk/models and unpack as "model" in the current folder.')
             exit(1)
 
         # распознавание записанного через микрофон аудио во избежание повторов
         wav_audio_file = wave.open('microphone-results.wav', 'rb')
-        model = Model('models/vosk-model-small-ru-0.22')
+        model = Model(f'models/vosk-model-small-{assistant.speech_lang}-0.22')
         offline_recognizer = Kaldi(model, wav_audio_file.getframerate())
 
         data = wav_audio_file.readframes(wav_audio_file.getnframes())
         if len(data) > 0:
             if offline_recognizer.AcceptWaveform(data):
                 recognized_data = offline_recognizer.Result()
-                print(recognized_data)
 
                 # получение распознанного текста из json-строки
                 recognized_data = json.loads(recognized_data)
                 recognized_data = recognized_data['text']
-                print(recognized_data)
+                print(colored(recognized_data, 'blue'))
     except:
         print('Сервис распознавания недоступен')
 
     return recognized_data
 
-
-# команды ассистенту
 
 def search_on_youtube(*args: tuple):
 
@@ -147,9 +178,9 @@ def search_on_youtube(*args: tuple):
     webbrowser.get().open_new_tab(url)
 
     # для мультиязычности лучше создать отдельный класс для перевода из JSON-файла
-    play_vox_assistant_speech(translator.get_translation(
+    play_speech(
         f'Вот что есть по запросу {search_query} на ютубе'
-        ))
+        )
 
 
 def search_standart_on_cntd(*args: tuple):
@@ -161,51 +192,180 @@ def search_standart_on_cntd(*args: tuple):
     url = 'https://docs.cntd.ru/search?q=' + search_query
     webbrowser.get().open_new_tab(url)
 
-    play_vox_assistant_speech(translator.get_translation(
+    play_speech(
         f'Вот что нашлось по запросу {voice_input[1]} {search_query}'
-        ))
+        )
 
 
 def repeater(*args: tuple):
     
     # повторение услышанного
-    if not args[0]:
-        return
-    text = ' '.join(args[0])
-    play_vox_assistant_speech(
-        f'повторяю, вы сказали: {text}'
-    )
+    try:
+        if not args[0]:
+            return
+        text = ' '.join(args[0])
+        play_speech(
+            f'вы сказали: {text}'
+        )
+    except IndexError as err:
+        play_speech('вы ничего не сказали для повторения')
 
 
-commands = {
-    #("hello", "hi", "morning", "привет"): play_greetings,
-    #("bye", "goodbye", "quit", "exit", "stop", "пока"): play_farewell_and_quit,
-    #("search", "google", "find", "найди"): search_for_term_on_google,
-    ('video', 'youtube', 'watch', 'видео', 'ютуб'): search_on_youtube,
-    ('гост', 'стандарт', 'снип', 'iso', 'gost',): search_standart_on_cntd,
-    ('повтори', 'repeat', 'повтори-ка', 'повторить', 'повтор'): repeater,
-    #("wikipedia", "definition", "about", "определение", "википедия"): search_on_wikipedia, # 'https://ru.wikipedia.org/w/index.php?search='
-    #("translate", "interpretation", "translation", "перевод", "перевести", "переведи"): get_translation,
-    #("language", "язык"): change_language,
-    #("weather", "forecast", "погода", "прогноз"): get_weather_forecast,
+def play_greetings(*args: tuple):
+    """
+    приветствие, случайное
+    """
+    greetings = ['доброе утро', 'добрый день',
+                 'привет', 'здравствуйте', 'приветствую', 'добрый вечер']
+
+    play_speech(f'{random.choice(greetings)}')
+
+
+def failure_phrases(*args: tuple):
+    """
+    распознать команды не удалось или нет такой в функциях
+    """
+    fail_phrases = ['слушаю', 'не поняла запрос', 'непонятно']
+
+    play_speech(f'{random.choice(fail_phrases)}')
+
+
+def play_farewell_and_quit(*args: tuple):
+    """
+    прощание и выход из программы
+    """
+    farewells = ['доброго дня', 'всего доброго', 'пока',
+                 'до встречи', 'хорошего вечера', 'доброй ночи']
+
+    current_hour = datetime.now().hour
+    if current_hour < 17:
+        play_speech(f'{random.choice(farewells[:-2])}')
+    elif current_hour > 17:
+        play_speech(f'{random.choice(farewells[1:-1])}')
+    elif current_hour > 22:
+        farewells = farewells[1:-2]
+        farewells.append('доброй ночи')
+        play_speech(f'{random.choice(farewells)}')
+    
+    tts_engine.stop()
+    quit()
+
+
+config = {
+    'intents': {
+        "greeting": {
+            "examples": ['привет', 'здравствуй', 'добрый день',
+                         'hello', 'good morning'],
+            "responses": play_greetings
+        },
+        'youtube_search': {
+            'examples': ['video', 'youtube', 'watch', 'видео',
+                         'ютуб', 'найди видео', 'покажи видео', 'find video',
+                         'find on youtube', 'search on youtube'],
+            'responses': search_on_youtube
+        },
+        'standarts_search': {
+            'examples': ['найди мне гост', 'найди мне стандарт',
+                         'найди гост', 'найди стандарт'],
+            'responses': search_standart_on_cntd
+        },
+        'repeater': {
+            'examples': ['повтори', 'repeat', 'повтори-ка', 'повторить', 'повтор'],
+            'responses': repeater
+        },
+        "farewell": {
+            "examples": ["пока", "до свидания", "увидимся", "до встречи",
+                         "goodbye", "bye", "see you soon"],
+        "responses": play_farewell_and_quit
+        },
+        #"google_search": {
+        #    "examples": ["найди в гугл",
+        #                 "search on google", "google", "find on google"],
+        #    "responses": search_for_term_on_google
+        #},
+    },
+    "failure_phrases": failure_phrases
 }
 
 
-def execute_named_commands(command_name: str, *args: list):
+def prepare_intent():
+    """
+    Подготовка модели для угадывания намерения пользователя
+    """
 
-    # Выполнение заданной пользователем команды с дополнительными аргументами
+    intent = []
+    target_vector = []
+    for intent_name, intent_data in config['intents'].items():
+        for example in intent_data['examples']:
+            intent.append(example)
+            target_vector.append(intent_name)
 
-    for key in commands.keys():
-        if command_name in key:
-            commands[key](*args)
-        else:
-            print('команда не найдена')
+    training_vector = vectorizer.fit_transform(intent)
+    classifier_probability.fit(training_vector, target_vector)
+    classifier.fit(training_vector, target_vector)
 
 
-# задел
+def get_intent(request):
+    """
+    Получение наиболее вероятного намерения в зависимости от запроса пользователя
+    :param request: запрос пользователя
+    :return наиболее вероятное намерение
+    """
+
+    best_intent = classifier.predict(vectorizer.transform([request]))[0]
+
+    index_of_best_intent = list(classifier_probability.classes_).index(best_intent)
+    probabilities = classifier_probability.predict_proba(vectorizer.transform([request]))[0]
+
+    best_intent_probability = probabilities[index_of_best_intent]
+
+    # при добавлении новых намерений НУЖНО уменьшать показатель, 
+    # иначе будут распознаваться не все функции
+    if best_intent_probability > 0.157:
+        return best_intent
+
+
+def prepare():
+    """
+    подготовка глобальных переменных к запуску приложения
+    """
+
+    global recognizer, microphone, tts_engine, person, assistant, translator, vectorizer, classifier, classifier_probability
+
+    # инициализация распознавания и ввода речи
+    recognizer = s_r.Recognizer()
+    microphone = s_r.Microphone()
+
+    # инициализация синтеза речи
+    tts_engine = pyttsx3.init()
+
+    # пользователь
+    person = Owner()
+    person.name = 'Nikita'
+    person.city = 'Sankt-Peterburg'
+    person.native_lang = 'ru'
+    person.second_lang = 'en'
+
+    # настройка ассистента
+    assistant = Vox()
+    assistant.name = ('пятница')
+    assistant.sex = 'female'
+    assistant.speech_lang = 'ru'
+
+    setup_vox_voice()
+
+    # переводчик ru-en
+    translator = Translation()
+
+    vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3))
+    classifier_probability = LogisticRegression()
+    classifier = LinearSVC()
+    prepare_intent()
 
 
 if __name__ == '__main__':
+
+    prepare()
 
     # инициализация распознавания и ввода речи
     recognizer = s_r.Recognizer()
@@ -225,28 +385,50 @@ if __name__ == '__main__':
 
     setup_vox_voice()
 
+    vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3))
+    classifier_probability = LogisticRegression()
+    classifier = LinearSVC()
+    prepare_intent()
+
     while True:
 
         # старт записи речи с последующим выводом распознанной речи
         # и удалением записанного в микрофон аудио
         voice_input = record_and_recognize()
-        try:
+        
+        if os.path.exists('microphone-results.wav'):
             os.remove('microphone-results.wav')
-        except FileNotFoundError:
-            pass
-        print(voice_input)
 
         # выделение команд от аргументов
-        # первое слово - команда активации, второе - команда, остальные слова аргументы для поисковой фразы
-        voice_input = voice_input.split(' ')
-        
-        if len(voice_input) > 1:
-            print(voice_input[0])
-            if voice_input[0] in assistant.name:
-                command = voice_input[1]
+        # первое слово -  команда, остальные слова аргументы для поисковой фразы
+        if voice_input:
+            voice_input_parts = voice_input.split(' ')
+            print(colored(voice_input_parts, 'yellow'), len(voice_input_parts))
 
-                command_args = [str(ask_part) for ask_part in voice_input[2:len(voice_input)]]
-                print(command, command_args, sep='\n')
-                execute_named_commands(command, command_args)
-        if len(voice_input) == 1 and voice_input[0] in assistant.name:
-            play_vox_assistant_speech('я вас внимательно слушаю')
+            if len(voice_input_parts) == 1:
+
+                intent = get_intent(voice_input)
+
+                if intent:
+                    config['intents'][intent]['responses']()
+                else:
+                    config['failure_phrases']()
+
+            """
+            в случае длинной фразы - выполняется поиск ключевой фразы
+            и аргументов через каждое слово, пока не будет найдено совпадение
+            """
+            
+            if len(voice_input_parts) > 1:
+                for guess in range(len(voice_input_parts)):
+                    intent = get_intent((' '.join(voice_input_parts[1:guess])).strip())
+                    print(colored(guess, 'cyan'), intent, sep='\n')
+                    print(colored((' '.join(voice_input_parts[0: guess])).strip(), 'blue'))
+
+                    if intent:
+                        command_options = [voice_input_parts[guess:len(voice_input_parts)]]
+                        print(colored(command_options, 'magenta'))
+                        config['intents'][intent]['responses'](*command_options)
+                        break
+                    if not intent and guess == len(voice_input_parts)-1:
+                        config['failure_phrases']()
