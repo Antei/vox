@@ -100,7 +100,7 @@ def record_and_recognize(*args: tuple):
         recognized_data = ''
         
         # регулирование уровня шума
-        recognizer.adjust_for_ambient_noise(microphone, duration=2)
+        recognizer.adjust_for_ambient_noise(microphone, duration=1)
 
         try:
             print('Слушаю...')
@@ -261,7 +261,7 @@ config = {
     'intents': {
         "greeting": {
             "examples": ['привет', 'здравствуй', 'добрый день',
-                         'hello', 'good morning'],
+                         'hello', 'good morning', 'добрый вечер', 'доброе утро'],
             "responses": play_greetings
         },
         'youtube_search': {
@@ -331,12 +331,14 @@ def get_intent(request):
         return best_intent
 
 
-def prepare():
+def preparations():
     """
     подготовка глобальных переменных к запуску приложения
     """
 
-    global recognizer, microphone, tts_engine, person, assistant, translator, vectorizer, classifier, classifier_probability
+    global recognizer, microphone, tts_engine, person, assistant
+    global translator, vectorizer, classifier, classifier_probability
+    global current_hour
 
     # инициализация распознавания и ввода речи
     recognizer = s_r.Recognizer()
@@ -363,7 +365,10 @@ def prepare():
     # переводчик ru-en
     translator = Translation()
 
-    vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3))
+    # текущий час для корректного приветствия\прощания и прочего
+    current_hour = datetime.now().hour
+
+    vectorizer = TfidfVectorizer(analyzer='char')
     classifier_probability = LogisticRegression()
     classifier = LinearSVC()
     prepare_intent()
@@ -371,33 +376,7 @@ def prepare():
 
 if __name__ == '__main__':
 
-    prepare()
-
-    # инициализация распознавания и ввода речи
-    recognizer = s_r.Recognizer()
-    microphone = s_r.Microphone()
-
-    # инициализация синтеза речи
-    tts_engine = pyttsx3.init()
-
-    # настройка ассистента
-    assistant = Vox()
-    assistant.name = ('пятница')
-    assistant.sex = 'female'
-    assistant.speech_lang = 'ru'
-
-    # переводчик ru-en
-    translator = Translation()
-
-    # текущий час для корректного приветствия\прощания и прочего
-    current_hour = datetime.now().hour
-
-    setup_vox_voice()
-
-    vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 3))
-    classifier_probability = LogisticRegression()
-    classifier = LinearSVC()
-    prepare_intent()
+    preparations()
 
     while True:
 
