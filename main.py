@@ -4,6 +4,9 @@ import random
 import pyttsx3
 from termcolor import colored
 from datetime import datetime
+import time
+from threading import Thread
+
 
 sr = speech_recognition.Recognizer()
 sr.pause_threshold = 0.5
@@ -29,6 +32,8 @@ def play_speech(text_to_speech):
 
     # Воспроизведение ответов ассистента
 
+    tts_engine = pyttsx3.init()
+
     tts_engine.say(str(text_to_speech))
     tts_engine.runAndWait()
 
@@ -44,11 +49,11 @@ def greetings():
     if 5 < current_hour < 11:
         greetings = greetings[2:-1]
         greetings.append('доброе утро')
-        play_speech(random.choice(greetings))
+        return play_speech(random.choice(greetings))
     elif 11 < current_hour < 17:
-        play_speech(random.choice(greetings[:-1]))
+        return play_speech(random.choice(greetings[:-1]))
     elif current_hour > 17:
-        play_speech(random.choice(greetings[1:]))
+        return play_speech(random.choice(greetings[1:]))
 
 
 def create_task():
@@ -83,6 +88,38 @@ def what_a_time():
     return play_speech(f'Сейчас {current_hour}:{current_minute}')
 
 
+def timer():
+
+    play_speech('на сколько ставить таймер?')
+
+    time_to = listen_commands()
+
+    data = str(time_to).split(' ')
+    local_time = 5 # по умолчанию 5 минут
+    multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
+    plur = 'минут'
+
+    if len(time_to) > 0:
+        for x in data:
+            if x.isnumeric():
+                local_time = int(x)
+            if x == 'часов' or x == 'часа' or 'час':
+                multiplier = 3600 # чтобы получить нужное количество часов
+                plur = x
+            if x == 'минут' or x == 'минуты' or 'минуту':
+                multiplier = 60 # чтобы получить нужное количество минут
+                plur = x
+            if x == 'секунд' or x == 'секунду' or 'секунды':
+                multiplier = 1 # чтобы получить нужное количество секунд
+                plur = x
+    
+    
+    play_speech(f'таймер установлен на {str(local_time)} {plur}')
+    print(local_time * multiplier)
+    time.sleep(local_time * multiplier)
+    return play_speech(f'таймер на {str(local_time)} {plur} закончился')
+
+
 def play_farewell_and_quit():
     
     # прощание в зависимости от времени суток и выход из программы
@@ -100,7 +137,7 @@ def play_farewell_and_quit():
         farewells.append('доброй ночи')
         play_speech(random.choice(farewells))
     
-    tts_engine.stop()
+    #tts_engine.stop()
     quit()
 
 
@@ -113,7 +150,8 @@ commands_list = {
         play_music: {'включи музыку', 'включи что-нибудь из музыки'},
         what_a_time: {'сколько времени', 'который час'},
         play_farewell_and_quit: {'пора спать', 'пока', 
-                                 'доброй ночи', 'выключайся'}
+                                 'доброй ночи', 'выключайся'},
+        timer: {'поставь таймер', 'включи таймер', 'таймер'}
         },
     'assistant_names': ['пятница', 'friday', 'эй пятница']
 }
@@ -127,13 +165,17 @@ def main():
 
     if data[0] in commands_list['assistant_names']:
         for key, value in commands_list['commands'].items():
-            if ' '.join(data[1:]) in value:
-                key()
+            if ' '.join(data[1:]) in value:                
+                if key == timer:
+                    th = Thread(target=timer, args=()) # создаем новый поток для таймера
+                    th.start()
+                else:
+                    key()
 
 
 if __name__ == '__main__':
 
-    tts_engine = pyttsx3.init()
+    #tts_engine = pyttsx3.init()
     current_time = datetime.now()
 
     while True:
