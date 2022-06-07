@@ -75,10 +75,13 @@ def create_task():
 
 def play_music():
 
-    files = os.listdir('music')
-    random_file = f'music/{random.choice(files)}'
-    play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
-    os.system(f'start {random_file}')
+    if os.path.exists('music'):
+        files = os.listdir('music')
+        random_file = f'music/{random.choice(files)}'
+        play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
+        os.system(f'start {random_file}')
+    else:
+        print('Добавьте в папку проекта папку "music".')
 
     return
 
