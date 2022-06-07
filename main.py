@@ -2,7 +2,6 @@ import speech_recognition
 import os
 import random
 import pyttsx3
-from termcolor import colored
 from datetime import datetime
 import time
 from threading import Thread
@@ -23,6 +22,9 @@ def listen_commands():
 
     except speech_recognition.UnknownValueError:
         return 'Ошибка распознавания'
+
+    except speech_recognition.WaitTimeoutError:
+        return
     
     except speech_recognition.RequestError:
         return 'Нет сети'
@@ -94,25 +96,24 @@ def timer():
 
     time_to = listen_commands()
 
-    data = str(time_to).split(' ')
     local_time = 5 # по умолчанию 5 минут
     multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
     plur = 'минут'
 
-    if len(time_to) > 0:
+    if time_to != 'Ошибка распознавания':
+        data = str(time_to).split(' ')
         for x in data:
             if x.isnumeric():
                 local_time = int(x)
-            if x == 'часов' or x == 'часа' or 'час':
+            if x in {'часов', 'часа', 'час'}:
                 multiplier = 3600 # чтобы получить нужное количество часов
                 plur = x
-            if x == 'минут' or x == 'минуты' or 'минуту':
+            if x in {'минут', 'минуты', 'минуту'}:
                 multiplier = 60 # чтобы получить нужное количество минут
                 plur = x
-            if x == 'секунд' or x == 'секунду' or 'секунды':
+            if x in {'секунд', 'секунду', 'секунды'}:
                 multiplier = 1 # чтобы получить нужное количество секунд
-                plur = x
-    
+                plur = x    
     
     play_speech(f'таймер установлен на {str(local_time)} {plur}')
     print(local_time * multiplier)
