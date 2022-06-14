@@ -159,24 +159,22 @@ def play_farewell_and_quit():
 
 
 # основная функция
-def main_function():
+def main():
 
-    print('ожидаю...')
-    query = listen_commands()
-    data = str(query).split(" ")
+    while True:
+        print('ожидаю...')
+        query = listen_commands()
+        data = str(query).split(" ")
 
-    if data[0] in commands.commands_dict['assistant_names']:
-        for key, value in commands.commands_dict['commands'].items():
-            if ' '.join(data[1:]) in value:
-                if key == timer:
-                    th_timer = Thread(target=timer, args=())
-                    th_timer.start()
-                else:
-                    key()
+        if data[0] in commands.commands_dict['assistant_names']:
+            for key, value in commands.commands_dict['commands'].items():
+                if ' '.join(data[1:]) in value:
+                    if key == timer:
+                        th_timer = Thread(target=timer, args=())
+                        th_timer.start()
+                    else:
+                        key()
 
 
 if __name__ == '__main__':
-
-    while True:
-
-        main_function()
+    main()
