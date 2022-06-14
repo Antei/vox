@@ -127,16 +127,6 @@ def timer():
     play_speech(f'таймер на {int(local_time)} {plur} закончился')
 
 
-#def alarm_clock():
-
-#    play_speech('на какое время?')
-#    alarm_set = listen_commands()
-
-#    hour, minute, sec = 0, 0, 0
-#    alarm_time = f'{hour}:{minute}:{sec}'
-#    cur_time = current_time.time().strftime('%H:%M:%S')
-
-
 def play_farewell_and_quit():
     
     # прощание в зависимости от времени суток и выход из программы
@@ -166,8 +156,8 @@ def main():
         query = listen_commands()
         data = str(query).split(" ")
 
-        if data[0] in commands.commands_dict['assistant_names']:
-            for key, value in commands.commands_dict['commands'].items():
+        if data[0] in commands.assistant_names:
+            for key, value in commands.commands_dict.items():
                 if ' '.join(data[1:]) in value:
                     if key == timer:
                         th_timer = Thread(target=timer, args=())
