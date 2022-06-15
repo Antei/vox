@@ -8,7 +8,7 @@ from threading import Thread
 
 
 # подключаем команды ассистента
-import commands
+from commands import *
 
 
 sr = speech_recognition.Recognizer()
@@ -154,16 +154,21 @@ def main():
     while True:
         print('ожидаю...')
         query = listen_commands()
-        data = str(query).split(" ")
+        if query:
+            assistant_name, command = str(query).split(" ", 1)
+        else:
+            continue
 
-        if data[0] in commands.assistant_names:
-            for key, value in commands.commands_dict.items():
-                if ' '.join(data[1:]) in value:
+        if assistant_name in assistant_names:
+            for key, value in commands_dict.items():
+                if command in value:
                     if key == timer:
                         th_timer = Thread(target=timer, args=())
                         th_timer.start()
                     else:
                         key()
+        else:
+            continue
 
 
 if __name__ == '__main__':
