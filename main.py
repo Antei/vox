@@ -3,6 +3,7 @@ import random
 import time
 from datetime import datetime
 from threading import Thread
+import itertools
 
 import pyttsx3
 import speech_recognition
@@ -11,25 +12,29 @@ import speech_recognition
 from commands import assistant_names, commands_dict
 
 current_time = datetime.now()
-sr = speech_recognition.Recognizer()
-sr.pause_threshold = 0.5
 tts_engine = pyttsx3.init()
 
 
-def listen_commands():
-    try:
-        with speech_recognition.Microphone() as mic:
-            sr.adjust_for_ambient_noise(source=mic, duration=0.5)
-            print('говорите...')
-            audio = sr.listen(source=mic)
-            rec_data = sr.recognize_google(audio_data=audio, language='ru-RU').lower()
-        return rec_data
-    except speech_recognition.UnknownValueError:
-        pass
-    except speech_recognition.WaitTimeoutError:
-        pass  
-    except speech_recognition.RequestError:
-        print('Нет сети')
+class Listener():
+    def __init__(self):
+        self.mic = speech_recognition.Microphone()
+        self.sr = speech_recognition.Recognizer()
+        self.pause_threshold = 0.5
+
+    def listen_commands(self):
+        try:
+            with self.mic:
+                self.sr.adjust_for_ambient_noise(source=self.mic, duration=0.5)
+                print('говорите...')
+                audio = self.sr.listen(source=self.mic)
+                rec_data = self.sr.recognize_google(audio_data=audio, language='ru-RU').lower()
+            return rec_data
+        except speech_recognition.UnknownValueError:
+            pass
+        except speech_recognition.WaitTimeoutError:
+            pass  
+        except speech_recognition.RequestError:
+            print('Нет сети')
 
 
 def play_speech(text_to_speech):
@@ -57,7 +62,7 @@ def greetings():
 def create_task():
     play_speech('что нужно добавить в заметку?')
 
-    note = listen_commands()
+    note = Listener().listen_commands()
 
     if note:
         with open('todo-list.txt', 'a', encoding='UTF-8') as file:
@@ -86,7 +91,7 @@ def what_a_time():
 def timer():
     play_speech('на сколько ставить таймер?')
 
-    time_to = listen_commands()
+    time_to = Listener().listen_commands()
 
     local_time = 1 # по умолчанию 1 минуту
     multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
@@ -131,6 +136,11 @@ def farewell_and_quit():
     quit()
 
 
+def invert_commands_dict(commands_dict):
+    inverted_commands_dict = dict(itertools.chain.from_iterable(itertools.product(v, [k]) for k, v in commands_dict.items()))
+    return inverted_commands_dict
+
+
 commands = {
     'greetings': greetings,
     'create_task': create_task,
@@ -143,22 +153,18 @@ commands = {
 
 # основная функция
 def main():
+    comm_dict = invert_commands_dict(commands_dict)
     while True:
         print('ожидаю...')
-        query = listen_commands()
+        query = Listener().listen_commands()
         if query:
             divided_query = str(query).split(' ', 1)
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
-                print(assistant_name, command)
-                if assistant_name in assistant_names:
-                    for key, value in commands_dict.items():
-                        if command in value:
-                            if key == timer:
-                                th_timer = Thread(target=timer, args=())
-                                th_timer.start()
-                            else:
-                                commands[key]()
+                print(assistant_name, command, sep='\n')
+                if assistant_name not in assistant_names:
+                    continue
+                commands[comm_dict.get(command)]()
             else:
                 play_speech('повторите запрос')
         else:
