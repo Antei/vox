@@ -12,14 +12,13 @@ import speech_recognition
 from commands import assistant_names, commands_dict
 
 current_time = datetime.now()
-tts_engine = pyttsx3.init()
 
 
-class Listener():
+class Listener:
     def __init__(self):
         self.mic = speech_recognition.Microphone()
         self.sr = speech_recognition.Recognizer()
-        self.pause_threshold = 0.5
+        self.sr.pause_threshold = 0.5
 
     def listen_commands(self):
         try:
@@ -37,10 +36,18 @@ class Listener():
             print('Нет сети')
 
 
-def play_speech(text_to_speech):
-    # Воспроизведение ответов ассистента
-    tts_engine.say(str(text_to_speech))
-    tts_engine.runAndWait()
+class Speaker:
+    def __init__(self):
+        # настройки преобразования текста в речь
+        self.tts = pyttsx3.init()
+
+    def play_speech(self, text_to_speech):
+        # Воспроизведение речи
+        self.tts.say(str(text_to_speech))
+        self.tts.runAndWait()
+
+    def stop_speech(self):
+        self.tts.stop()
 
 
 def greetings():
@@ -52,31 +59,31 @@ def greetings():
     if 5 < current_hour < 11:
         greetings = greetings[2:-1]
         greetings.append('доброе утро')
-        play_speech(random.choice(greetings))
+        Speaker().play_speech(random.choice(greetings))
     elif 11 < current_hour < 17:
-        play_speech(random.choice(greetings[:-1]))
+        Speaker().play_speech(random.choice(greetings[:-1]))
     elif current_hour > 17:
-        play_speech(random.choice(greetings[1:]))
+        Speaker().play_speech(random.choice(greetings[1:]))
 
 
 def create_task():
-    play_speech('что нужно добавить в заметку?')
+    Speaker().play_speech('что нужно добавить в заметку?')
 
     note = Listener().listen_commands()
 
     if note:
         with open('todo-list.txt', 'a', encoding='UTF-8') as file:
             file.write(f'- {note}\n')
-        play_speech(f'Задача "{note}" успешно добавлена в список дел.')
+        Speaker().play_speech(f'Задача "{note}" успешно добавлена в список дел.')
     else:
-        play_speech('Нет данных для добавления')
+        Speaker().play_speech('Нет данных для добавления')
 
 
 def play_music():
     if os.path.exists('music'):
         files = os.listdir('music')
         random_file = f'music/{random.choice(files)}'
-        play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
+        Speaker().play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
         os.system(f'start {random_file}')
     else:
         print('Добавьте в папку проекта папку "music".')
@@ -85,11 +92,11 @@ def play_music():
 def what_a_time():
     current_hour = current_time.hour
     current_minute = current_time.minute
-    play_speech(f'Сейчас {current_hour}:{current_minute}')
+    Speaker().play_speech(f'Сейчас {current_hour}:{current_minute}')
 
 
 def timer():
-    play_speech('на сколько ставить таймер?')
+    Speaker().play_speech('на сколько ставить таймер?')
 
     time_to = Listener().listen_commands()
 
@@ -112,9 +119,9 @@ def timer():
                 multiplier = 1 # чтобы получить нужное количество секунд
                 plur = x    
     
-    play_speech(f'таймер установлен на {int(local_time)} {plur}')
+    Speaker().play_speech(f'таймер установлен на {int(local_time)} {plur}')
     time.sleep(local_time * multiplier)
-    play_speech(f'таймер на {int(local_time)} {plur} закончился')
+    Speaker().play_speech(f'таймер на {int(local_time)} {plur} закончился')
 
 
 def farewell_and_quit():
@@ -124,15 +131,15 @@ def farewell_and_quit():
     current_hour = current_time.hour
 
     if current_hour < 17:
-        play_speech(random.choice(farewells[:-2]))
+        Speaker().play_speech(random.choice(farewells[:-2]))
     elif current_hour > 17:
-        play_speech(random.choice(farewells[1:-1]))
+        Speaker().play_speech(random.choice(farewells[1:-1]))
     elif current_hour > 22:
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
-        play_speech(random.choice(farewells))
+        Speaker().play_speech(random.choice(farewells))
     
-    tts_engine.stop()
+    Speaker().stop_speech()
     quit()
 
 
@@ -146,8 +153,8 @@ commands = {
     'create_task': create_task,
     'play_music': play_music,
     'what_a_time': what_a_time,
-    'farewell_and_quit': farewell_and_quit,
     'timer': timer,
+    'farewell_and_quit': farewell_and_quit,
 }
 
 
@@ -166,9 +173,7 @@ def main():
                     continue
                 commands[comm_dict.get(command)]()
             else:
-                play_speech('повторите запрос')
-        else:
-            continue
+                Speaker().play_speech('повторите запрос')
 
 
 if __name__ == '__main__':
