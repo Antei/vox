@@ -5,49 +5,16 @@ from datetime import datetime
 from threading import Thread
 import itertools
 
-import pyttsx3
-import speech_recognition
+# подключаем преобразование речи в текст и текста в речь
+from listen_and_speak import Listener, Speaker
 
-# подключаем команды ассистента
+# подключаем команды и имена ассистента
 from commands import assistant_names, commands_dict
 
+
 current_time = datetime.now()
-
-
-class Listener:
-    def __init__(self):
-        self.mic = speech_recognition.Microphone()
-        self.sr = speech_recognition.Recognizer()
-        self.sr.pause_threshold = 0.5
-
-    def listen_commands(self):
-        try:
-            with self.mic:
-                self.sr.adjust_for_ambient_noise(source=self.mic, duration=0.5)
-                print('говорите...')
-                audio = self.sr.listen(source=self.mic)
-                rec_data = self.sr.recognize_google(audio_data=audio, language='ru-RU').lower()
-            return rec_data
-        except speech_recognition.UnknownValueError:
-            pass
-        except speech_recognition.WaitTimeoutError:
-            pass  
-        except speech_recognition.RequestError:
-            print('Нет сети')
-
-
-class Speaker:
-    def __init__(self):
-        # настройки преобразования текста в речь
-        self.tts = pyttsx3.init()
-
-    def play_speech(self, text_to_speech):
-        # Воспроизведение речи
-        self.tts.say(str(text_to_speech))
-        self.tts.runAndWait()
-
-    def stop_speech(self):
-        self.tts.stop()
+sr = Listener()
+tts = Speaker()
 
 
 def greetings():
@@ -59,31 +26,31 @@ def greetings():
     if 5 < current_hour < 11:
         greetings = greetings[2:-1]
         greetings.append('доброе утро')
-        Speaker().play_speech(random.choice(greetings))
+        tts.play_speech(random.choice(greetings))
     elif 11 < current_hour < 17:
-        Speaker().play_speech(random.choice(greetings[:-1]))
+        tts.play_speech(random.choice(greetings[:-1]))
     elif current_hour > 17:
-        Speaker().play_speech(random.choice(greetings[1:]))
+        tts.play_speech(random.choice(greetings[1:]))
 
 
 def create_task():
-    Speaker().play_speech('что нужно добавить в заметку?')
+    tts.play_speech('что нужно добавить в заметку?')
 
-    note = Listener().listen_commands()
+    note = sr.listen_commands()
 
     if note:
         with open('todo-list.txt', 'a', encoding='UTF-8') as file:
             file.write(f'- {note}\n')
-        Speaker().play_speech(f'Задача "{note}" успешно добавлена в список дел.')
+        tts.play_speech(f'Задача "{note}" успешно добавлена в список дел.')
     else:
-        Speaker().play_speech('Нет данных для добавления')
+        tts.play_speech('Нет данных для добавления')
 
 
 def play_music():
     if os.path.exists('music'):
         files = os.listdir('music')
         random_file = f'music/{random.choice(files)}'
-        Speaker().play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
+        tts.play_speech(f'Воспроизведение файла "{random_file.split("/")[-1]}"')
         os.system(f'start {random_file}')
     else:
         print('Добавьте в папку проекта папку "music".')
@@ -92,13 +59,13 @@ def play_music():
 def what_a_time():
     current_hour = current_time.hour
     current_minute = current_time.minute
-    Speaker().play_speech(f'Сейчас {current_hour}:{current_minute}')
+    tts.play_speech(f'Сейчас {current_hour}:{current_minute}')
 
 
 def timer():
-    Speaker().play_speech('на сколько ставить таймер?')
+    tts.play_speech('на сколько ставить таймер?')
 
-    time_to = Listener().listen_commands()
+    time_to = sr.listen_commands()
 
     local_time = 1 # по умолчанию 1 минуту
     multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
@@ -119,9 +86,9 @@ def timer():
                 multiplier = 1 # чтобы получить нужное количество секунд
                 plur = x    
     
-    Speaker().play_speech(f'таймер установлен на {int(local_time)} {plur}')
+    tts.play_speech(f'таймер установлен на {int(local_time)} {plur}')
     time.sleep(local_time * multiplier)
-    Speaker().play_speech(f'таймер на {int(local_time)} {plur} закончился')
+    tts.play_speech(f'таймер на {int(local_time)} {plur} закончился')
 
 
 def farewell_and_quit():
@@ -131,15 +98,15 @@ def farewell_and_quit():
     current_hour = current_time.hour
 
     if current_hour < 17:
-        Speaker().play_speech(random.choice(farewells[:-2]))
+        tts.play_speech(random.choice(farewells[:-2]))
     elif current_hour > 17:
-        Speaker().play_speech(random.choice(farewells[1:-1]))
+        tts.play_speech(random.choice(farewells[1:-1]))
     elif current_hour > 22:
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
-        Speaker().play_speech(random.choice(farewells))
+        tts.play_speech(random.choice(farewells))
     
-    Speaker().stop_speech()
+    tts.stop_speech()
     quit()
 
 
@@ -148,6 +115,7 @@ def invert_commands_dict(commands_dict):
     return inverted_commands_dict
 
 
+# упрощенный словарь для вызова функций
 commands = {
     'greetings': greetings,
     'create_task': create_task,
@@ -163,7 +131,7 @@ def main():
     comm_dict = invert_commands_dict(commands_dict)
     while True:
         print('ожидаю...')
-        query = Listener().listen_commands()
+        query = sr.listen_commands()
         if query:
             divided_query = str(query).split(' ', 1)
             if len(divided_query) > 1:
@@ -173,7 +141,7 @@ def main():
                     continue
                 commands[comm_dict.get(command)]()
             else:
-                Speaker().play_speech('повторите запрос')
+                tts.play_speech('повторите запрос')
 
 
 if __name__ == '__main__':
