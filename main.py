@@ -23,12 +23,12 @@ def greetings():
 
     if 5 < current_hour < 11:
         greetings = greetings[2:-1]
-        greetings.append('доброе утро')
-        tts.play_speech(random.choice(greetings))
+        greetings.append('доброе утро')  
     elif 11 < current_hour < 17:
-        tts.play_speech(random.choice(greetings[:-1]))
+        greetings = greetings[:-1]
     elif current_hour > 17:
-        tts.play_speech(random.choice(greetings[1:]))
+        greetings = greetings[1:]
+    tts.play_speech(random.choice(greetings))
 
 
 def create_task():
@@ -90,13 +90,13 @@ def farewell_and_quit():
                  'до встречи', 'хорошего вечера']
     current_hour = current_time.hour
     if current_hour < 17:
-        tts.play_speech(random.choice(farewells[:-2]))
+        farewells = farewells[:-2]
     elif current_hour > 17:
-        tts.play_speech(random.choice(farewells[1:-1]))
+        farewells = farewells[1:-1]
     elif current_hour > 22:
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
-        tts.play_speech(random.choice(farewells))
+    tts.play_speech(random.choice(farewells))
     tts.stop_speech()
     quit()
 
