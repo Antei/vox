@@ -19,8 +19,6 @@ class Listener:
             self.sr.adjust_for_ambient_noise(source=self.mic, duration=0.5)
             print('говорите...')
             audio = self.sr.listen(source=self.mic)
-            with open('audio_data.wav', 'wb') as file:
-                file.write(audio.get_wav_data())
         try:
             rec_data = self.sr.recognize_google(audio_data=audio, language='ru-RU').lower()
         except speech_recognition.UnknownValueError:
@@ -29,6 +27,8 @@ class Listener:
             pass  
         except speech_recognition.RequestError:
             print('Нет сети, пробую распознать офлайн...')
+            with open('audio_data.wav', 'wb') as file:
+                file.write(audio.get_wav_data())
             off_rec = Offline_recognizer()
             rec_data = off_rec.offline_recognition()
         return rec_data
@@ -60,6 +60,8 @@ class Offline_recognizer:
                         recognized_data = recognized_data['text']
         except:
             print('Ошибка распознавания')
+        if os.path.exists('audio_data.wav'):
+            os.remove('audio_data.wav')
         return recognized_data
 
 

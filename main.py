@@ -133,8 +133,6 @@ def main():
                 commands[comm_dict.get(command)]()
             else:
                 tts.play_speech('повторите запрос')
-        if os.path.exists('audio_data.wav'):
-            os.remove('audio_data.wav')
 
 
 if __name__ == '__main__':
