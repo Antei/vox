@@ -2,12 +2,10 @@ import os
 import random
 import time
 from datetime import datetime
-from threading import Thread
 import itertools
 
 # подключаем преобразование речи в текст и текста в речь
 from listen_and_speak import Listener, Speaker
-
 # подключаем команды и имена ассистента
 from commands import assistant_names, commands_dict
 
@@ -35,7 +33,6 @@ def greetings():
 
 def create_task():
     tts.play_speech('что нужно добавить в заметку?')
-
     note = sr.listen_commands()
 
     if note:
@@ -64,13 +61,10 @@ def what_a_time():
 
 def timer():
     tts.play_speech('на сколько ставить таймер?')
-
     time_to = sr.listen_commands()
-
     local_time = 1 # по умолчанию 1 минуту
     multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
     plur = 'минуту'
-
     if time_to:
         data = str(time_to).split(' ')
         for x in data:
@@ -85,7 +79,6 @@ def timer():
             if x in {'секунд', 'секунду', 'секунды'}:
                 multiplier = 1 # чтобы получить нужное количество секунд
                 plur = x    
-    
     tts.play_speech(f'таймер установлен на {int(local_time)} {plur}')
     time.sleep(local_time * multiplier)
     tts.play_speech(f'таймер на {int(local_time)} {plur} закончился')
@@ -96,7 +89,6 @@ def farewell_and_quit():
     farewells = ['доброго дня', 'всего доброго', 'пока',
                  'до встречи', 'хорошего вечера']
     current_hour = current_time.hour
-
     if current_hour < 17:
         tts.play_speech(random.choice(farewells[:-2]))
     elif current_hour > 17:
@@ -105,7 +97,6 @@ def farewell_and_quit():
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
         tts.play_speech(random.choice(farewells))
-    
     tts.stop_speech()
     quit()
 
@@ -142,6 +133,8 @@ def main():
                 commands[comm_dict.get(command)]()
             else:
                 tts.play_speech('повторите запрос')
+        if os.path.exists('audio_data.wav'):
+            os.remove('audio_data.wav')
 
 
 if __name__ == '__main__':
