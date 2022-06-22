@@ -3,19 +3,34 @@ import random
 import time
 from datetime import datetime
 import itertools
+import re
 
 # подключаем преобразование речи в текст и текста в речь
-from listen_and_speak import Listener, Speaker
+import listen_and_speak
 # подключаем команды и имена ассистента
 from commands import assistant_names, commands_dict
+# подключаем пользовательские данные
+from user_setup import User
+# подключаем поисковые функции
+import search_funcs
 
-
+# системное время
 current_time = datetime.now()
-sr = Listener()
-tts = Speaker()
+
+# распознавание и воспроизведение речи
+sr = listen_and_speak.Listener()
+tts = listen_and_speak.Speaker()
 
 
-def greetings():
+# настройки пользователя
+user = User()
+user.language = 'ru'
+user.homecity = 'Санкт-Петербург'
+
+
+###
+# функции голосового помощника
+def greetings(*args):
     # приветствие, случайное, в зависимости от времени суток
     greetings = ['добрый день', 'привет', 'здравствуйте',
                  'приветствую', 'добрый вечер']
@@ -31,7 +46,7 @@ def greetings():
     tts.play_speech(random.choice(greetings))
 
 
-def create_task():
+def create_task(*args):
     tts.play_speech('что нужно добавить в заметку?')
     note = sr.listen_commands()
 
@@ -43,7 +58,7 @@ def create_task():
         tts.play_speech('Нет данных для добавления')
 
 
-def play_music():
+def play_music(*args):
     if os.path.exists('music'):
         files = os.listdir('music')
         random_file = f'music/{random.choice(files)}'
@@ -53,13 +68,13 @@ def play_music():
         print('Добавьте в папку проекта папку "music".')
 
 
-def what_a_time():
+def what_a_time(*args):
     current_hour = current_time.hour
     current_minute = current_time.minute
     tts.play_speech(f'Сейчас {current_hour}:{current_minute}')
 
 
-def timer():
+def timer(*args):
     tts.play_speech('на сколько ставить таймер?')
     time_to = sr.listen_commands()
     local_time = 1 # по умолчанию 1 минуту
@@ -84,7 +99,16 @@ def timer():
     tts.play_speech(f'таймер на {int(local_time)} {plur} закончился')
 
 
-def farewell_and_quit():
+def search_on_wiki(*args):
+    if not args[0]:
+        tts.play_speech('вы не сказали, что нужно найти?')
+    keyphrase = args[0]
+    wk = search_funcs.Wikisearcher()
+    answer = wk.get_info(user.language, keyphrase)
+    tts.play_speech(f'{keyphrase} - это {answer}')
+
+
+def farewell_and_quit(*args):
     # прощание в зависимости от времени суток и выход из программы
     farewells = ['доброго дня', 'всего доброго', 'пока',
                  'до встречи', 'хорошего вечера']
@@ -101,6 +125,10 @@ def farewell_and_quit():
     quit()
 
 
+###
+
+
+# сервисные функции
 def invert_commands_dict(commands_dict):
     inverted_commands_dict = dict(itertools.chain.from_iterable(itertools.product(v, [k]) for k, v in commands_dict.items()))
     return inverted_commands_dict
@@ -113,6 +141,7 @@ commands = {
     'play_music': play_music,
     'what_a_time': what_a_time,
     'timer': timer,
+    'search_on_wiki': search_on_wiki,
     'farewell_and_quit': farewell_and_quit,
 }
 
@@ -128,9 +157,13 @@ def main():
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
                 print(assistant_name, command, sep='\n')
+                for key in comm_dict.keys():
+                    if re.match(key, command):
+                        func = key
+                        command_options = command.replace(key, '')
                 if assistant_name not in assistant_names:
                     continue
-                commands[comm_dict.get(command)]()
+                commands[comm_dict.get(func)](command_options)
             else:
                 tts.play_speech('повторите запрос')
 
