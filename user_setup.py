@@ -9,3 +9,4 @@ class User:
         self.sex: str = ''
         self.speciality: str = ''
         self.language: str = ''
+        self.second_language: str = ''

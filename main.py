@@ -3,7 +3,6 @@ import random
 import time
 from datetime import datetime
 import itertools
-import re
 
 # подключаем преобразование речи в текст и текста в речь
 import listen_and_speak
@@ -17,6 +16,7 @@ import search_funcs
 # системное время
 current_time = datetime.now()
 
+
 # распознавание и воспроизведение речи
 sr = listen_and_speak.Listener()
 tts = listen_and_speak.Speaker()
@@ -26,6 +26,7 @@ tts = listen_and_speak.Speaker()
 user = User()
 user.language = 'ru'
 user.homecity = 'Санкт-Петербург'
+user.second_language = 'en'
 
 
 ###
@@ -105,7 +106,8 @@ def search_on_wiki(*args):
     keyphrase = args[0]
     wk = search_funcs.Wikisearcher()
     answer = wk.get_info(user.language, keyphrase)
-    tts.play_speech(f'{keyphrase} - это {answer}')
+    print(answer)
+    tts.play_speech(answer)
 
 
 def farewell_and_quit(*args):
@@ -151,16 +153,16 @@ def main():
     comm_dict = invert_commands_dict(commands_dict)
     while True:
         print('ожидаю...')
-        query = sr.listen_commands()
+        query: str = sr.listen_commands()
         if query:
-            divided_query = str(query).split(' ', 1)
+            divided_query = query.split(' ', 1)
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
-                print(assistant_name, command, sep='\n')
                 for key in comm_dict.keys():
-                    if re.match(key, command):
+                    if key in command:
                         func = key
-                        command_options = command.replace(key, '')
+                        command_options = command.replace(key, '').strip()
+                print(assistant_name, func, command_options, sep='\n')
                 if assistant_name not in assistant_names:
                     continue
                 commands[comm_dict.get(func)](command_options)
