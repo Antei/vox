@@ -16,9 +16,9 @@ class Listener:
     def listen_commands(self):
         rec_data = ''
         with self.mic:
-            self.sr.adjust_for_ambient_noise(source=self.mic, duration=0.5)
+            self.sr.adjust_for_ambient_noise(self.mic, duration=0.5)
             print('говорите...')
-            audio = self.sr.listen(source=self.mic)
+            audio = self.sr.listen(self.mic, 5, 12)
         try:
             rec_data = self.sr.recognize_google(audio_data=audio, language='ru-RU').lower()
         except speech_recognition.UnknownValueError:

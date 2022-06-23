@@ -40,16 +40,15 @@ def greetings(*args):
     if 5 < current_hour < 11:
         greetings = greetings[2:-1]
         greetings.append('доброе утро')  
-    elif 11 < current_hour < 17:
+    elif 11 < current_hour < 16:
         greetings = greetings[:-1]
-    elif current_hour > 17:
+    elif current_hour > 16:
         greetings = greetings[1:]
     tts.play_speech(random.choice(greetings))
 
 
 def create_task(*args):
-    tts.play_speech('что нужно добавить в заметку?')
-    note = sr.listen_commands()
+    note = args[0]
 
     if note:
         with open('todo-list.txt', 'a', encoding='UTF-8') as file:
@@ -76,8 +75,7 @@ def what_a_time(*args):
 
 
 def timer(*args):
-    tts.play_speech('на сколько ставить таймер?')
-    time_to = sr.listen_commands()
+    time_to = args[0]
     local_time = 1 # по умолчанию 1 минуту
     multiplier = 60 # по умолчанию таймер ставим на минуты, потому множитель 60
     plur = 'минуту'
@@ -101,12 +99,12 @@ def timer(*args):
 
 
 def search_on_wiki(*args):
-    if not args[0]:
-        tts.play_speech('вы не сказали, что нужно найти?')
+    if not args:
+        tts.play_speech('вы не сказали, что ищете')
     keyphrase = args[0]
     wk = search_funcs.Wikisearcher()
     answer = wk.get_info(user.language, keyphrase)
-    print(answer)
+    #print(answer)
     tts.play_speech(answer)
 
 
@@ -115,11 +113,11 @@ def farewell_and_quit(*args):
     farewells = ['доброго дня', 'всего доброго', 'пока',
                  'до встречи', 'хорошего вечера']
     current_hour = current_time.hour
-    if current_hour < 17:
+    if 5 < current_hour < 16:
         farewells = farewells[:-2]
-    elif current_hour > 17:
+    elif current_hour > 16:
         farewells = farewells[1:-1]
-    elif current_hour > 22:
+    elif 5 > current_hour > 22:
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
     tts.play_speech(random.choice(farewells))
@@ -162,7 +160,6 @@ def main():
                     if key in command:
                         func = key
                         command_options = command.replace(key, '').strip()
-                print(assistant_name, func, command_options, sep='\n')
                 if assistant_name not in assistant_names:
                     continue
                 commands[comm_dict.get(func)](command_options)
