@@ -2,7 +2,6 @@ import os
 import random
 import time
 from datetime import datetime
-import itertools
 
 # подключаем преобразование речи в текст и текста в речь
 import listen_and_speak
@@ -12,6 +11,8 @@ from commands import assistant_names, commands_dict
 from user_setup import User
 # подключаем поисковые функции
 import search_funcs
+# подключаем сервисные функции
+import service_funcs
 
 # системное время
 current_time = datetime.now()
@@ -45,6 +46,23 @@ def greetings(*args):
     elif current_hour > 16:
         greetings = greetings[1:]
     tts.play_speech(random.choice(greetings))
+
+
+def farewell_and_quit(*args):
+    # прощание в зависимости от времени суток и выход из программы
+    farewells = ['доброго дня', 'всего доброго', 'пока',
+                 'до встречи', 'хорошего вечера']
+    current_hour = current_time.hour
+    if 5 < current_hour < 16:
+        farewells = farewells[:-2]
+    elif current_hour > 16:
+        farewells = farewells[1:-1]
+    elif 5 > current_hour > 22:
+        farewells = farewells[1:-2]
+        farewells.append('доброй ночи')
+    tts.play_speech(random.choice(farewells))
+    tts.stop_speech()
+    quit()
 
 
 def create_task(*args):
@@ -103,35 +121,23 @@ def search_on_wiki(*args):
         tts.play_speech('вы не сказали, что ищете')
     keyphrase = args[0]
     wk = search_funcs.Wikisearcher()
-    answer = wk.get_info(user.language, keyphrase)
-    #print(answer)
+    answer = wk.get_wiki_info(user.language, keyphrase)
     tts.play_speech(answer)
 
 
-def farewell_and_quit(*args):
-    # прощание в зависимости от времени суток и выход из программы
-    farewells = ['доброго дня', 'всего доброго', 'пока',
-                 'до встречи', 'хорошего вечера']
-    current_hour = current_time.hour
-    if 5 < current_hour < 16:
-        farewells = farewells[:-2]
-    elif current_hour > 16:
-        farewells = farewells[1:-1]
-    elif 5 > current_hour > 22:
-        farewells = farewells[1:-2]
-        farewells.append('доброй ночи')
-    tts.play_speech(random.choice(farewells))
-    tts.stop_speech()
-    quit()
+def get_weather(*args):
+    if not args or len(args[0]) < 2:
+        city = 'Санкт-Петербург'
+    else:
+        city = args[0]
+    
+    weather = search_funcs.Weatherer()
+    answer = weather.get_weather_info(city)
+    print(answer)
+    tts.play_speech(answer)
 
 
 ###
-
-
-# сервисные функции
-def invert_commands_dict(commands_dict):
-    inverted_commands_dict = dict(itertools.chain.from_iterable(itertools.product(v, [k]) for k, v in commands_dict.items()))
-    return inverted_commands_dict
 
 
 # упрощенный словарь для вызова функций
@@ -142,13 +148,14 @@ commands = {
     'what_a_time': what_a_time,
     'timer': timer,
     'search_on_wiki': search_on_wiki,
+    'get_weather': get_weather,
     'farewell_and_quit': farewell_and_quit,
 }
 
 
 # основная функция
 def main():
-    comm_dict = invert_commands_dict(commands_dict)
+    comm_dict = service_funcs.DictInverter.invert_commands_dict(commands_dict)
     while True:
         print('ожидаю...')
         query: str = sr.listen_commands()
