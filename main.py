@@ -139,7 +139,6 @@ def get_weather(*args):
 
 ###
 
-
 # упрощенный словарь для вызова функций
 commands = {
     'greetings': greetings,
@@ -153,9 +152,12 @@ commands = {
 }
 
 
+# инвертируем словарь команд для упрощения и более быстрой работы
+comm_dict = service_funcs.DictInverter.invert_commands_dict(commands_dict)
+
+
 # основная функция
 def main():
-    comm_dict = service_funcs.DictInverter.invert_commands_dict(commands_dict)
     while True:
         print('ожидаю...')
         query: str = sr.listen_commands()
