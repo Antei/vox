@@ -102,13 +102,13 @@ def timer(*args):
         for x in data:
             if x.isnumeric():
                 local_time = float(x)
-            if x in {'часов', 'часа', 'час'}:
+            if 'час' in x:
                 multiplier = 3600 # чтобы получить нужное количество часов
                 plur = x
-            if x in {'минут', 'минуты', 'минуту'}:
+            if 'минут' in x:
                 multiplier = 60 # чтобы получить нужное количество минут
                 plur = x
-            if x in {'секунд', 'секунду', 'секунды'}:
+            if 'сек' in x:
                 multiplier = 1 # чтобы получить нужное количество секунд
                 plur = x    
     tts.play_speech(f'таймер установлен на {int(local_time)} {plur}')
@@ -118,7 +118,7 @@ def timer(*args):
 
 def search_on_wiki(*args):
     if not args:
-        tts.play_speech('вы не сказали, что ищете')
+        tts.play_speech('вы не сказали, что нужно найти')
     keyphrase = args[0]
     wk = search_funcs.Wikisearcher()
     answer = wk.get_wiki_info(user.language, keyphrase)
@@ -127,7 +127,7 @@ def search_on_wiki(*args):
 
 def get_weather(*args):
     if not args or len(args[0]) < 2:
-        city = 'Санкт-Петербург'
+        city = user.homecity
     else:
         city = args[0]
     

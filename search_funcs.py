@@ -29,15 +29,15 @@ class Weatherer:
 
     def get_weather_info(self, request_city):
         config_dict = get_default_config()
-        config_dict['language'] = 'ru'  # your language here
+        config_dict['language'] = 'ru'
         self.city = request_city
 
         try:
-            # использование API-ключа, помещённого в .env-файл по примеру WEATHER_API_KEY = "01234abcd....."
+            # использование API-ключа, помещённого в .env-файл
             weather_api_key = os.getenv("OWM_API_KEY")
             self.ow_map = OWM(weather_api_key)
 
-            # запрос данных о текущем состоянии погоды
+            # запрос данных о текущем состоянии погоды в указанном городе
             wm = self.ow_map.weather_manager()
             observation = wm.weather_at_place(self.city)
             weather = observation.weather
@@ -46,7 +46,7 @@ class Weatherer:
             return 'Ошибка, не найдены данные о погоде'
 
         # разбиение данных на части для удобства
-        status = weather.detailed_status
+        status = weather.detailed_status # облачность
         temperature = int(weather.temperature('celsius')["temp"])
         wind_speed = int(weather.wind()["speed"])
         pressure = int(weather.pressure["press"] / 1.333)  # перевод из гПА в мм рт.ст
