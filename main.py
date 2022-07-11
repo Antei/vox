@@ -38,12 +38,12 @@ def greetings(*args):
                  'приветствую', 'добрый вечер']
     current_hour = current_time.hour
 
-    if 5 < current_hour < 11:
+    if 5 < current_hour < 12:
         greetings = greetings[1:-1]
         greetings.append('доброе утро')  
-    elif 11 < current_hour < 16:
+    elif 12 < current_hour < 18:
         greetings = greetings[:-1]
-    elif current_hour > 16:
+    elif current_hour > 18:
         greetings = greetings[1:]
     tts.play_speech(random.choice(greetings))
 
@@ -53,9 +53,9 @@ def farewell_and_quit(*args):
     farewells = ['доброго дня', 'всего доброго', 'пока',
                  'до встречи', 'хорошего вечера']
     current_hour = current_time.hour
-    if 5 < current_hour < 16:
+    if 5 < current_hour < 18:
         farewells = farewells[:-2]
-    elif current_hour > 16:
+    elif current_hour > 18:
         farewells = farewells[1:-1]
     elif 5 > current_hour > 22:
         farewells = farewells[1:-2]
