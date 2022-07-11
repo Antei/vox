@@ -39,7 +39,7 @@ def greetings(*args):
     current_hour = current_time.hour
 
     if 5 < current_hour < 11:
-        greetings = greetings[2:-1]
+        greetings = greetings[1:-1]
         greetings.append('доброе утро')  
     elif 11 < current_hour < 16:
         greetings = greetings[:-1]
