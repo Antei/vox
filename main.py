@@ -1,3 +1,4 @@
+from cgi import test
 import os
 import random
 import time
@@ -35,7 +36,7 @@ user.second_language = 'en'
 def greetings(*args):
     # приветствие, случайное, в зависимости от времени суток
     greetings = ['добрый день', 'привет', 'здравствуйте',
-                 'приветствую', 'добрый вечер']
+                 'здарова', 'приветствую', 'добрый вечер']
     current_hour = current_time.hour
 
     if 5 < current_hour < 12:
@@ -160,11 +161,14 @@ comm_dict = service_funcs.DictInverter.invert_commands_dict(commands_dict)
 def main():
     while True:
         print('ожидаю...')
+        #matcher = service_funcs.Matcher()
         query: str = sr.listen_commands()
         if query:
             divided_query = query.split(' ', 1)
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
+                #test_ = matcher.get_intent(command, comm_dict)
+                #print(test_)
                 for key in comm_dict.keys():
                     if key in command:
                         func = key

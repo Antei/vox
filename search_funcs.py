@@ -55,6 +55,6 @@ class Weatherer:
         result = f'''Погода в {self.city}: 
                      Температура: {temperature} по Цельсию,
                      Скорость ветра: {wind_speed} метра в секунду, 
-                     Облачность: {status}.'''
+                     {status}.'''
 
         return result
