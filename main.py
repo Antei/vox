@@ -161,20 +161,21 @@ comm_dict = service_funcs.DictInverter.invert_commands_dict(commands_dict)
 def main():
     while True:
         print('ожидаю...')
-        #matcher = service_funcs.Matcher()
+        matcher = service_funcs.Matcher()
         query: str = sr.listen_commands()
         if query:
             divided_query = query.split(' ', 1)
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
-                #test_ = matcher.get_intent(command, comm_dict)
-                #print(test_)
-                for key in comm_dict.keys():
-                    if key in command:
-                        func = key
-                        command_options = command.replace(key, '').strip()
-                if assistant_name not in assistant_names:
-                    continue
+                for name in assistant_names:
+                    if matcher.query_match(assistant_name, name):
+                        assistant_name = name
+                        for key in comm_dict.keys():
+                            if key in command:
+                                func = key
+                                command_options = command.replace(key, '').strip()
+                    if assistant_name not in assistant_names:
+                        continue
                 commands[comm_dict.get(func)](command_options)
             else:
                 tts.play_speech('повторите запрос')

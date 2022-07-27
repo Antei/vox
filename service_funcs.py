@@ -25,8 +25,7 @@ class Matcher:
     def prepare_query(self, text: str):
     # приведение к нижнему регистру на всякий случай
         text = text.strip().lower()
-        re_not_word = r'\w\s'
-        text = re.sub(re_not_word, '', text)
+        text = re.sub(r'\w\s', '', text)
         return text
 
 
