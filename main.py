@@ -134,7 +134,6 @@ def get_weather(*args):
     
     weather = search_funcs.Weatherer()
     answer = weather.get_weather_info(city)
-    print(answer)
     tts.play_speech(answer)
 
 
@@ -165,6 +164,7 @@ def main():
         query: str = sr.listen_commands()
         if query:
             divided_query = query.split(' ', 1)
+            command_options = ''
             if len(divided_query) > 1:
                 assistant_name, command = divided_query
                 for name in assistant_names:
