@@ -1,12 +1,15 @@
 # объекты для данных и настроек пользователей
 
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
 class User:
-    def __init__(self):
-        self.name: str = ''
-        self.surname: str = ''
-        self.homecity: str = ''
-        self.age: str or int = ''
-        self.sex: str = ''
-        self.speciality: str = ''
-        self.language: str = ''
-        self.second_language: str = ''
+    name: str = 'Unknown'
+    surname: str = 'Unknown'
+    homecity: str = 'Unknown'
+    age: str or int = 'Unknown'
+    sex: str = 'Unknown'
+    speciality: str = 'Unknown'
+    language: str = 'Unknown'
+    second_language: str = 'Unknown'

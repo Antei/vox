@@ -25,10 +25,7 @@ tts = listen_and_speak.Speaker()
 
 
 # настройки пользователя
-user = User()
-user.language = 'ru'
-user.homecity = 'Санкт-Петербург'
-user.second_language = 'en'
+user = User(language='ru', second_language='en', homecity='Санкт-Петербург')
 
 
 ###

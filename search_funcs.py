@@ -31,7 +31,6 @@ class Weatherer:
         config_dict = get_default_config()
         config_dict['language'] = 'ru'
         self.city = request_city
-        print(self.city)
 
         try:
             # использование API-ключа, помещённого в .env-файл
