@@ -25,10 +25,13 @@ tts = listen_and_speak.Speaker()
 
 
 # настройки пользователя
-user = User(language='ru', second_language='en', homecity='Санкт-Петербург')
+user = User(
+    language='ru', 
+    second_language='en', 
+    homecity='Санкт-Петербург'
+    )
 
 
-###
 # функции голосового помощника
 def greetings(*args):
     # приветствие, случайное, в зависимости от времени суток
@@ -133,8 +136,6 @@ def get_weather(*args):
     answer = weather.get_weather_info(city)
     tts.play_speech(answer)
 
-
-###
 
 # упрощенный словарь для вызова функций
 commands = {
