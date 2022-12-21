@@ -18,13 +18,14 @@ class Listener:
         with self.mic:
             self.sr.adjust_for_ambient_noise(self.mic, duration=0.5)
             print('говорите...')
-            audio = self.sr.listen(self.mic, 5, 12)
+            try:
+                audio = self.sr.listen(self.mic)
+            except speech_recognition.WaitTimeoutError:
+                return 'Проверьте микрофон'
         try:
             rec_data = self.sr.recognize_google(audio_data=audio, language='ru-RU').lower()
         except speech_recognition.UnknownValueError:
             pass
-        except speech_recognition.WaitTimeoutError:
-            pass  
         except speech_recognition.RequestError:
             print('Нет сети, пробую распознать офлайн...')
             with open('audio_data.wav', 'wb') as file:
@@ -67,11 +68,9 @@ class Offline_recognizer:
 
 class Speaker:
     def __init__(self):
-        # настройки преобразования текста в речь
         self.engine = pyttsx3.init()
 
     def play_speech(self, text_to_speech):
-        # Воспроизведение речи
         self.engine.say(str(text_to_speech))
         self.engine.runAndWait()
 

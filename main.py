@@ -62,7 +62,6 @@ def farewell_and_quit(*args):
         farewells = farewells[1:-2]
         farewells.append('доброй ночи')
     tts.play_speech(random.choice(farewells))
-    tts.stop_speech()
     quit()
 
 
